@@ -48,7 +48,7 @@ public enum JSONDecodableError: ErrorType, CustomStringConvertible {
 // Dictionary -> Struct
 
 public protocol JSONDecodable {
-    init?(JSONDictionary: JSONObject)
+    static func fromJSON(JSONDictionary: JSONObject) -> Self?
 }
 
 public extension Array where Element: JSONDecodable {
@@ -57,7 +57,7 @@ public extension Array where Element: JSONDecodable {
             guard let json = $0 as? [String : AnyObject] else {
                 return nil
             }
-            return Element(JSONDictionary: json)
+            return Element.fromJSON(json)
             })
     }
 }
@@ -110,7 +110,7 @@ public class JSONDecoder {
         guard let object = value as? JSONObject else {
             throw JSONDecodableError.DictionaryTypeExpectedError(key: key, elementType: value.dynamicType)
         }
-        guard let decodable = Decodable(JSONDictionary: object) else {
+        guard let decodable = Decodable.fromJSON(object) else {
             throw JSONDecodableError.IncompatibleTypeError(key: key, elementType: value.dynamicType, expectedType: Decodable.self)
         }
         return decodable
@@ -124,7 +124,7 @@ public class JSONDecoder {
         guard let object = value as? JSONObject else {
             throw JSONDecodableError.DictionaryTypeExpectedError(key: key, elementType: value.dynamicType)
         }
-        return Decodable(JSONDictionary: object)
+        return Decodable.fromJSON(object)
     }
     
     // Enum
@@ -185,7 +185,7 @@ public class JSONDecoder {
         guard let array = value as? [JSONObject] else {
             throw JSONDecodableError.ArrayTypeExpectedError(key: key, elementType: value.dynamicType)
         }
-        return array.flatMap {Element(JSONDictionary: $0)}
+        return array.flatMap {Element.fromJSON($0)}
     }
     
     // [JSONDecodable]?
@@ -196,7 +196,7 @@ public class JSONDecoder {
         guard let array = value as? [JSONObject] else {
             throw JSONDecodableError.ArrayTypeExpectedError(key: key, elementType: value.dynamicType)
         }
-        return array.flatMap {Element(JSONDictionary: $0)}
+        return array.flatMap {Element.fromJSON($0)}
     }
     
     // [Enum]

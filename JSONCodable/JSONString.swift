@@ -56,7 +56,8 @@ public extension Optional where Wrapped: JSONEncodable {
 }
 
 public extension JSONDecodable {
-    init?(JSONString: String) {
+
+    static func decode(JSONString: String) -> Self? {
         guard let data = JSONString.dataUsingEncoding(NSUTF8StringEncoding) else {
             return nil
         }
@@ -72,8 +73,8 @@ public extension JSONDecodable {
         guard let converted = result as? [String: AnyObject] else {
             return nil
         }
-        
-        self.init(JSONDictionary: converted)
+
+        return fromJSON(converted)
     }
 }
 

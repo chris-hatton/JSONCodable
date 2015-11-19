@@ -122,7 +122,7 @@ Result:
 Simply add conformance to `JSONDecodable` (or to `JSONCodable`):
 ```swift
 extension User: JSONDecodable {
-    init?(JSONDictionary: JSONObject) {
+    static func fromJSON(JSONDictionary: JSONObject) -> User? {
         let decoder = JSONDecoder(object: JSONDictionary)
         do {
             id = try decoder.decode("id")
@@ -138,7 +138,7 @@ extension User: JSONDecodable {
 }
 
 extension Company: JSONDecodable {
-    init?(JSONDictionary: JSONObject) {
+    static func fromJSON(JSONDictionary: JSONObject) -> Company? {
         let decoder = JSONDecoder(object: JSONDictionary)
         do {
             name = try decoder.decode("name")
@@ -151,7 +151,7 @@ extension Company: JSONDecodable {
 }
 ```
 
-Simply provide the implementations for `init?(JSONDictionary: JSONObject)` where `JSONObject` is a typealias for `[String:AnyObject]`.
+Simply provide the implementations for `fromJSON(JSONDictionary: JSONObject)` where `JSONObject` is a typealias for `[String:AnyObject]`.
 As before, you can use this to configure the mapping between keys in the Dictionary to properties in your structs and classes.
 
 ```swift
@@ -189,7 +189,7 @@ User(
 ```
 
 ## Working with JSON Strings
-The convenience initializer `init?(JSONString: String)` is provided on `JSONDecodable`. You may also use `func toJSONString() throws -> String` to obtain a string equivalent of your types.
+The static convenience function `fromJSON(JSONString: String)` is provided on `JSONDecodable`. You may also use `func toJSONString() throws -> String` to obtain a string equivalent of your types.
 
 ## Transforming values
 
@@ -211,7 +211,7 @@ struct User {
   var website: NSURL?
 }
 
-init?(JSONDictionary: JSONObject) {
+static func fromJSON(JSONDictionary: JSONObject) -> User? {
     let decoder = JSONDecoder(object: JSONDictionary)
     do {
         ...
