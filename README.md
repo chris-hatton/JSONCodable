@@ -24,12 +24,12 @@ Hassle-free JSON encoding and decoding in Swift
 
 - Simply add the following to your [`Cartfile`](https://github.com/Carthage/Carthage) and run `carthage update`:
 ```
-github "matthewcheok/JSONCodable"
+github "matthewcheok/JSONCodable" ~> 2.1
 ```
 
 - or add the following to your [`Podfile`](http://cocoapods.org/) and run `pod install`:
 ```
-pod 'JSONCodable', '~> 2.0'
+pod 'JSONCodable', '~> 2.1'
 ```
 
 - or clone as a git submodule,
@@ -122,40 +122,30 @@ Result:
 Simply add conformance to `JSONDecodable` (or to `JSONCodable`):
 ```swift
 extension User: JSONDecodable {
-    static func fromJSON(JSONDictionary: JSONObject) -> User? {
-        let decoder = JSONDecoder(object: JSONDictionary)
-        do {
-            id = try decoder.decode("id")
-            name = try decoder.decode("full_name")
-            email = try decoder.decode("email")
-            company = try decoder.decode("company")
-            friends = try decoder.decode("friends")
-        }
-        catch {
-            return nil
-        }
-    }
+    static func fromJSON(JSONDictionary: JSONObject) throws -> User {
+      let decoder = JSONDecoder(object: object)        
+      id = try decoder.decode("id")
+      name = try decoder.decode("full_name")
+      email = try decoder.decode("email")
+      company = try decoder.decode("company")
+      friends = try decoder.decode("friends")
+  }
 }
 
 extension Company: JSONDecodable {
-    static func fromJSON(JSONDictionary: JSONObject) -> Company? {
-        let decoder = JSONDecoder(object: JSONDictionary)
-        do {
-            name = try decoder.decode("name")
-            address = try decoder.decode("address")
-        }
-        catch {
-            return nil
-        }
-    }
+  init(object: JSONObject) throws {
+      let decoder = JSONDecoder(object: object)
+      name = try decoder.decode("name")
+      address = try decoder.decode("address")
+  }
 }
 ```
 
-Simply provide the implementations for `fromJSON(JSONDictionary: JSONObject)` where `JSONObject` is a typealias for `[String:AnyObject]`.
+Simply provide the implementations for `init(object: JSONObject) throws` where `JSONObject` is a typealias for `[String:AnyObject]`.
 As before, you can use this to configure the mapping between keys in the Dictionary to properties in your structs and classes.
 
 ```swift
-let user = User(JSONDictionary: JSON)
+let user = try! User(object: JSON)
 print("\(user)")
 ```
 
@@ -211,15 +201,8 @@ struct User {
   var website: NSURL?
 }
 
-static func fromJSON(JSONDictionary: JSONObject) -> User? {
-    let decoder = JSONDecoder(object: JSONDictionary)
-    do {
-        ...
-        website = try JSONDictionary.decode("website", transformer: JSONTransformerStringToNSURL)
-    }
-    catch {
-        return nil
-    }
+static func fromJSON(JSONDictionary: JSONObject) throws -> User {    ...
+    website = try JSONDictionary.decode("website", transformer: JSONTransformerStringToNSURL)
 }
 
 func toJSON() throws -> AnyObject {
@@ -236,6 +219,30 @@ The following transformers are provided by default:
 - `JSONTransformers.StringToNSDate`: `String <-> NSDate` ISO format
 
 Feel free to suggest more!
+
+## Extending JSONCodable (thanks to @raylillywhite)
+
+This allows for JSONDecoder extensions that allow the type system to better aid in decoding. For example, you could do:
+
+```swift
+extension JSONDecoder {
+    public func decode(key: String) throws -> NSURL {
+        return try decode(key, transformer: JSONTransformers.StringToNSURL)
+    }
+}
+```
+
+then you only need to do:
+
+```swift
+try url = decoder.decode("url")
+```
+
+instead of
+
+```swift
+try url = decoder.decode("url", JSONTransformers.StringToNSURL)
+```
 
 ## Example code
 

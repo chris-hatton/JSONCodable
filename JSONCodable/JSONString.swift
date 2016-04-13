@@ -17,7 +17,11 @@ public extension JSONEncodable {
             return String(self)
         default:
             let json = try toJSON()
+            #if !swift(>=3.0)
             let data = try NSJSONSerialization.dataWithJSONObject(json, options: NSJSONWritingOptions(rawValue: 0))
+            #else
+                let data = try NSJSONSerialization.data(withJSONObject: json, options: NSJSONWritingOptions(rawValue: 0))
+            #endif
             guard let string = NSString(data: data, encoding: NSUTF8StringEncoding) else {
                 return ""
             }
@@ -46,56 +50,68 @@ private func escapeJSONString(str: String) -> String {
 
 public extension Optional where Wrapped: JSONEncodable {
     public func toJSONString() throws -> String {
+        #if !swift(>=3.0)
         switch self {
         case let .Some(jsonEncodable):
             return try jsonEncodable.toJSONString()
         case nil:
             return "null"
         }
+        #else
+        switch self {
+        case let .some(jsonEncodable):
+            return try jsonEncodable.toJSONString()
+        case nil:
+            return "null"
+        }
+        #endif
     }
 }
 
 public extension JSONDecodable {
-
-    static func decode(JSONString: String) -> Self? {
+    
+    static func decode(JSONString: String) throws -> Self {
+        #if !swift(>=3.0)
         guard let data = JSONString.dataUsingEncoding(NSUTF8StringEncoding) else {
-            return nil
+            throw JSONDecodableError.IncompatibleTypeError(key: "n/a", elementType: JSONString.dynamicType, expectedType: String.self)
         }
         
-        let result: AnyObject
-        do {
-            result = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
-        }
-        catch {
-            return nil
+        let result: AnyObject = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
+        #else
+            guard let data = JSONString.data(usingEncoding:NSUTF8StringEncoding) else {
+            throw JSONDecodableError.IncompatibleTypeError(key: "n/a", elementType: JSONString.dynamicType, expectedType: String.self)
         }
         
+            let result: AnyObject = try NSJSONSerialization.jsonObject(with: data, options: NSJSONReadingOptions(rawValue: 0))
+        #endif
+
         guard let converted = result as? [String: AnyObject] else {
-            return nil
+            throw JSONDecodableError.DictionaryTypeExpectedError(key: "n/a", elementType: result.dynamicType)
         }
 
-        return fromJSON(converted)
+        return try fromJSON(converted)
     }
 }
 
 public extension Array where Element: JSONDecodable {
-    init?(JSONString: String) {
+    init(JSONString: String) throws {
+        #if !swift(>=3.0)
         guard let data = JSONString.dataUsingEncoding(NSUTF8StringEncoding) else {
-            return nil
+            throw JSONDecodableError.IncompatibleTypeError(key: "n/a", elementType: JSONString.dynamicType, expectedType: String.self)
         }
         
-        let result: AnyObject
-        do {
-            result = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
-        }
-        catch {
-            return nil
+        let result: AnyObject  = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions(rawValue: 0))
+        #else
+            guard let data = JSONString.data(usingEncoding: NSUTF8StringEncoding) else {
+            throw JSONDecodableError.IncompatibleTypeError(key: "n/a", elementType: JSONString.dynamicType, expectedType: String.self)
         }
         
+            let result: AnyObject  = try NSJSONSerialization.jsonObject(with: data, options: NSJSONReadingOptions(rawValue: 0))
+        #endif
         guard let converted = result as? [AnyObject] else {
-            return nil
+            throw JSONDecodableError.ArrayTypeExpectedError(key: "n/a", elementType: result.dynamicType)
         }
         
-        self.init(JSONArray: converted)
+        try self.init(JSONArray: converted)
     }
 }
